@@ -351,7 +351,8 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
         #print(" > Switch web token: {}".format(switch_web_token))
 
         print("準備完了!")
-        embed=discord.Embed(title="Success!", description="認証成功！\n２時間後に認証が切れてしまいますのでそれ以上使う場合はもう１度/setup_step1,/setup_step2コマンドを実行してください。", color=0x00ff40)
+        os.remove("./setup_json/" + str(interaction.user.id) + ".json")
+        embed=discord.Embed(title="Success!", description="認証成功！\n2時間後に認証が切れてしまいますのでそれ以上使う場合はもう1度/setup_step1,/setup_step2コマンドを実行してください。", color=0x00ff40)
         await interaction.followup.send(embed=embed)
     else:
         print("Error!:最初に/setup_step1コマンドでセットアップを行ってください。")
