@@ -14,7 +14,7 @@ Sorry, edtitting... / 編集中です…。
 
 * 英語に対応させる / English support
 
-* 関数にできるところはする / create function
+* 関数にできるところはする / Create function
 
 * 他にもバグがあるかも...？ / Maybe there is a bug...? (Deepl Trancelate)
  
