@@ -12,6 +12,10 @@ Sorry, edtitting... / 編集中です…。
 ## 課題 / Problems
 <!-- * 現状では1人が限界で、複数人同時使用ができない。 / This bot use 1 people limit. Many people not work this bot. !-->
 
+* 英語に対応させる / English support
+
+* 関数にできるところはする / create function
+
 * 他にもバグがあるかも...？ / Maybe there is a bug...? (Deepl Trancelate)
  
 ## Download
