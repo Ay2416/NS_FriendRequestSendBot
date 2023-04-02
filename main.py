@@ -667,7 +667,7 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
             return
 
         web_token = jsn["web_token"]["web_token"]
-        spreadsheet_apikey = "AIzaSyAP2YxoPtlVW0WYqfYECiv3gyRHiicAvI8"
+        spreadsheet_apikey = "your_apikey"
         allmessage = ""
         message = ""
         
