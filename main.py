@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from time import sleep
 from mk8dx import lounge_api
 import glob
-#import ndjson
+# import ndjson
 import time
 
 # friendcode.py import
@@ -39,7 +39,7 @@ rsess = requests.Session()
 @client.event
 async def on_ready():
     print("接続しました！")
-    await client.change_presence(activity=discord.Game(name="Ver.0.7 beta | /help"))
+    await client.change_presence(activity=discord.Game(name="Ver.0.8 beta | /help"))
     await tree.sync()#スラッシュコマンドを同期
     print("グローバルコマンド同期完了！")
 
@@ -80,7 +80,7 @@ async def test_command(interaction: discord.Interaction,text:str):
         json.dump(naiyou, f, ensure_ascii=False)
     '''
 
-    await interaction.followup.send(text + "\n" + text)
+    await interaction.followup.send("> " + text + "\n> " + text)
 
 # /setup_start
 #@tree.command(name="setup_start",description="セットアップを開始します。")
@@ -131,8 +131,8 @@ async def setup_step1(interaction: discord.Interaction):
     
     embed=discord.Embed(title="こちらでニンテンドーアカウントにログインしてください。", color=0xffffff)
     embed.add_field(name="・ログインしましたら、", value="　", inline=False)
-    embed.add_field(name="パソコンの場合", value="「この人にする」ボタンを右クリックし「リンクアドレスをコピー」を選択して以下にペーストしてください。", inline=False)
-    embed.add_field(name="スマホの場合", value="「この人にする」ボタンを長押しして、「リンクアドレスをコピー」を選択して以下にペーストしてください。", inline=False)
+    embed.add_field(name="パソコンの場合", value="「この人にする」ボタンを右クリックし「リンクアドレスをコピー」を選択して/setup_step2コマンドの[link_address]の部分でペーストしてください。", inline=False)
+    embed.add_field(name="スマホの場合", value="「この人にする」ボタンを長押しして、「リンクアドレスをコピー」を選択して/setup_step2コマンドの[link_address]に部分でペーストしてください。", inline=False)
     embed.add_field(name="⇩URL⇩", value=oauth_uri, inline=False)
     await interaction.response.send_message(embed=embed,ephemeral=True)
 
@@ -375,7 +375,6 @@ async def finish(interaction: discord.Interaction):
             judge = 0
     
     if(judge == 1):
-        os.remove("./setup_json/" + str(interaction.user.id) + ".json")
         os.remove("./user_json/" + str(interaction.user.id) + ".json")
 
         print("User data deleted.")
@@ -391,7 +390,7 @@ async def finish(interaction: discord.Interaction):
 async def help(interaction: discord.Interaction):
         embed=discord.Embed(title="Command list")
         embed.add_field(name="/setup_step1", value="このBotを使うに当たってセットアップに必要な任天堂アカウントログイン用のURLを発行します。", inline=False)
-        embed.add_field(name="/setup_step2 [セットアップ1でコピーをしたURL]", value="このBotを使うに当たってセットアップに必要なセットアップを完了させます。", inline=False)
+        embed.add_field(name="/setup_step2 [/setup_step1でコピーをしたURL]", value="このBotを使うに当たってセットアップに必要なセットアップを完了させます。", inline=False)
         embed.add_field(name="/finish", value="このBotでの処理を終了し、セットアップが必要な初期状態に戻します。\n（※使い終わったら必ず実行してください。次回以降の使用に影響が出る可能性があります。）", inline=False)
         embed.add_field(name="/help", value="このBotのコマンドの簡単な使い方を出します。", inline=False)
         embed.add_field(name="/server_num", value="このBotの導入されているサーバー数を表示します。", inline=False)
@@ -412,6 +411,7 @@ async def server_num(interaction: discord.Interaction):
 async def fr_command(interaction: discord.Interaction,code:str):
     files = glob.glob('./user_json/*.json')
     judge = 0
+    response_num = 0
 
     for i in range(0, len(files)):
         print(os.path.split(files[i])[1])
@@ -440,10 +440,19 @@ async def fr_command(interaction: discord.Interaction,code:str):
         web_token = jsn["web_token"]["web_token"]
 
         allmessage = ""
-        message = []
+        message = ""
         for i in range(0, len(player_fc)):
             # def search_friend_code(web_token):
             friend_code = player_fc[i]
+            message = "**" + str(i+1) + ". " + friend_code + "**"
+            if(response_num == 0):
+                allmessage = allmessage + message + "\n"
+                await interaction.followup.send(allmessage)
+                response_num = 1
+            else:
+                allmessage = allmessage + "\n"
+                allmessage = allmessage + message + "\n"
+                await interaction.edit_original_response(content=allmessage)
 
             if re.match('[\d]{4}-[\d]{4}-[\d]{4}$', friend_code):
                 resp = rsess.post("https://api-lp1.znc.srv.nintendo.net/v3/Friend/GetUserByFriendCode", json={
@@ -457,8 +466,10 @@ async def fr_command(interaction: discord.Interaction,code:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error searching for friend code, aborting... ({})".format(resp.text))
-                    message.append("Error! :x:Error searching for friend code, aborting...:x: ```your typing code:" + friend_code + "\n{}```".format(resp.text))
-                    sleep(3)
+                    message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    sleep(10)
                     continue
                     #sys.exit(1)
                 print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
@@ -478,25 +489,26 @@ async def fr_command(interaction: discord.Interaction,code:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error sending friend request, aborting... ({})".format(resp.text))
-                    message.append("Error! :x:Error sending friend request, aborting...:x: ```your typing code:" + friend_code + "\n{}```".format(resp.text))
-                    sleep(3)
+                    message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    sleep(10)
                     continue
                     #sys.exit(1)
                 print("フレンド申請を送信しました")
-                message.append(friend_name + "さんにフレンド申請しました！")
-                sleep(3)
+                message = "> " + friend_name + "さんにフレンド申請しました！"
+                allmessage = allmessage + message + "\n"
+                await interaction.edit_original_response(content=allmessage)
+                sleep(10)
             else:
                 print("Error!:Not friend code! your typing code:" + friend_code)
-                message.append("Error! :x:Not friend code!:x: ```your typing code:" + friend_code + "\n```")
-                sleep(3)
+                message = "> Error! :x:Not friend code!:x: ```your typing code:" + friend_code + "\n```"
+                allmessage = allmessage + message + "\n"
+                await interaction.edit_original_response(content=allmessage)
+                sleep(10)
                 continue
 
-        
-        for i in range(0, len(message)):
-            allmessage = allmessage + message[i] + "\n"
-
         print("Success!:全ての処理が終わりました！")
-        await interaction.followup.send(allmessage)
     else:
         print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
         embed=discord.Embed(title="Error!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
@@ -507,6 +519,7 @@ async def fr_command(interaction: discord.Interaction,code:str):
 async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
     files = glob.glob('./user_json/*.json')
     judge = 0
+    response_num = 0
 
     for i in range(0, len(files)):
         print(os.path.split(files[i])[1])
@@ -549,11 +562,21 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
         #print(player_fc)
         
         allmessage = ""
-        message = []
+        message = ""
         for i in range(0, len(player_fc)):
 
             # def search_friend_code(web_token):
             friend_code = player_fc[i]
+            
+            message = "**" + str(i+1) + ". " + name_data[i] + "**"
+            if(response_num == 0):
+                allmessage = allmessage + message + "\n"
+                await interaction.followup.send(allmessage)
+                response_num = 1
+            else:
+                allmessage = allmessage + "\n"
+                allmessage = allmessage + message + "\n"
+                await interaction.edit_original_response(content=allmessage)
 
             if re.match('[\d]{4}-[\d]{4}-[\d]{4}$', friend_code):
                 resp = rsess.post("https://api-lp1.znc.srv.nintendo.net/v3/Friend/GetUserByFriendCode", json={
@@ -567,8 +590,10 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error searching for friend code, aborting... ({})".format(resp.text))
-                    message.append("Error! :x:Error searching for friend code, aborting...:x: ```your typing lounge name:" + name_data[i] + "\n{}```".format(resp.text))
-                    sleep(3)
+                    message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing lounge name:" + name_data[i] + "\n> {}```".format(resp.text)
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    sleep(10)
                     continue
                     #sys.exit(1)
                 print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
@@ -589,24 +614,26 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error sending friend request, aborting... ({})".format(resp.text))
-                    message.append("Error! :x:Error sending friend request, aborting...:x: ```your typing lounge name:" + name_data[i] + "\n{}```".format(resp.text))
-                    sleep(3)
+                    message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing lounge name:" + name_data[i] + "\n> {}```".format(resp.text)
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    sleep(10)
                     continue
                     #sys.exit(1)
                 print("フレンド申請を送信しました")
-                message.append(friend_name + "さんにフレンド申請しました！")
-                sleep(3)
+                message = "> " + friend_name + "さんにフレンド申請しました！"
+                allmessage = allmessage + message + "\n"
+                await interaction.edit_original_response(content=allmessage)
+                sleep(10)
             else:
                 print("Error!:Not friend code! your typing lounge name Not found!:" + name_data[i])
-                message.append("Error! :x:Not friend code!:x: ```your typing lounge name Not found!:" + name_data[i] + "\n```")
-                sleep(3)
+                message = "> Error! :x:Not friend code!:x: ```your typing lounge name Not found!:" + name_data[i] + "\n> ```"
+                allmessage = allmessage + message + "\n"
+                await interaction.edit_original_response(content=allmessage)
+                sleep(10)
                 continue
-
-        for i in range(0, len(message)):
-            allmessage = allmessage + message[i] + "\n"
         
-        print("Success!:全てのフレンド申請が終わりました！")
-        await interaction.followup.send(allmessage)
+        print("Success!:全ての処理が終わりました！")
     else:
         embed=discord.Embed(title="Error!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
         await interaction.response.send_message(embed=embed,ephemeral=False)
@@ -617,6 +644,7 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
 async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_url:str,sheet_name:str,selected_range:str):
     files = glob.glob('./user_json/*.json')
     judge = 0
+    response_num = 0
 
     for i in range(0, len(files)):
         print(os.path.split(files[i])[1])
@@ -639,9 +667,9 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
             return
 
         web_token = jsn["web_token"]["web_token"]
-        spreadsheet_apikey = "your_apikey"
+        spreadsheet_apikey = "AIzaSyAP2YxoPtlVW0WYqfYECiv3gyRHiicAvI8"
         allmessage = ""
-        message = []
+        message = ""
         
         if spreadsheet_url[0:37] == 'https://docs.google.com/spreadsheets/':
             # debug message start
@@ -699,6 +727,16 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
             for i in range(0, len(codedata)):
                 # def search_friend_code(web_token):
                 friend_code = codedata[i]
+                
+                message = "**" + str(i+1) + ". " + friend_code + "**"
+                if(response_num == 0):
+                    allmessage = allmessage + message + "\n"
+                    await interaction.followup.send(allmessage)
+                    response_num = 1
+                else:
+                    allmessage = allmessage + "\n"
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
 
                 if re.match('[\d]{4}-[\d]{4}-[\d]{4}$', friend_code):
 
@@ -713,8 +751,10 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
                     })
                     if resp.status_code != 200 or "errorMessage" in resp.json():
                         print("Error searching for friend code, aborting... ({})".format(resp.text))
-                        message.append("Error! :x:Error searching for friend code, aborting...:x: ```friend code:" + friend_code + "\n{}```".format(resp.text))
-                        sleep(3)
+                        message = "> Error! :x:Error searching for friend code, aborting...:x: ```friend code:" + friend_code + "\n> {}```".format(resp.text)
+                        allmessage = allmessage + message + "\n"
+                        await interaction.edit_original_response(content=allmessage)
+                        sleep(10)
                         continue
                         #sys.exit(1)
                     print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
@@ -735,28 +775,31 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
                     })
                     if resp.status_code != 200 or "errorMessage" in resp.json():
                         print("Error sending friend request, aborting... ({})".format(resp.text))
-                        message.append("Error! :x:Error sending friend request, aborting...:x: ```friend code:" + friend_code + "\n{}```".format(resp.text))
-                        sleep(3)
+                        message = "> Error! :x:Error sending friend request, aborting...:x: ```friend code:" + friend_code + "\n> {}```".format(resp.text)
+                        allmessage = allmessage + message + "\n"
+                        await interaction.edit_original_response(content=allmessage)
+                        sleep(10)
                         continue
                         #sys.exit(1)
                     print("フレンド申請を送信しました")
-                    message.append(friend_name + "さんにフレンド申請しました！")
-                    sleep(3)
+                    message = "> " + friend_name + "さんにフレンド申請しました！"
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    sleep(10)
                 else:
                     print("Error!:Not friend code! friend code:" + friend_code)
-                    message.append("Error! :x:Not friend code!:x: ```friend code:" + friend_code + "\n```")
-                    sleep(3)
+                    message = "> Error! :x:Not friend code!:x: ```friend code:" + friend_code + "```"
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    sleep(10)
                     continue
         else:
             print("Error!:Not Support!")
             embed=discord.Embed(title="Error!", description=":x:Not Support!:x:", color=0xff0000)
             await interaction.response.send_message(embed=embed,ephemeral=False)
-        
-        for i in range(0, len(message)):
-            allmessage = allmessage + message[i] + "\n"
-        
-        print("Success!:全てのフレンド申請が終わりました！")
-        await interaction.followup.send(allmessage)
+
+        print("Success!:全ての処理が終わりました！")
+
     else:
         print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
         embed=discord.Embed(title="Error!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
