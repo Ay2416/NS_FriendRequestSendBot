@@ -122,6 +122,8 @@ MIT License & GNU General Public License v3.0↓
 
 * Pythonでファイル・ディレクトリを削除するos.remove, shutil.rmtreeなど：[https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/](https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/)
 
+* 【Discord】テキスト(文字)を装飾する方法【色付けの方法も！】：[https://dorokin.com/discord_text](https://dorokin.com/discord_text)
+
 * スプラトゥーン3でもstat.inkへバトルを記録！「s3s」導入手順：[https://vanillasalt.net/2022/10/10/how-to-use-s3s/](https://vanillasalt.net/2022/10/10/how-to-use-s3s/)
 
 * imink API Documentation - Github：[https://github.com/JoneWang/imink/wiki/imink-API-Documentation](https://github.com/JoneWang/imink/wiki/imink-API-Documentation)
@@ -231,6 +233,8 @@ Sorry, Almost Japanese site...
 * Python 3のデータ型を変換する方法:[https://www.digitalocean.com/community/tutorials/how-to-convert-data-types-in-python-3-ja](https://www.digitalocean.com/community/tutorials/how-to-convert-data-types-in-python-3-ja)
 
 * Pythonでファイル・ディレクトリを削除するos.remove, shutil.rmtreeなど:[https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/](https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/)
+
+* 【Discord】テキスト(文字)を装飾する方法【色付けの方法も！】:[https://dorokin.com/discord_text](https://dorokin.com/discord_text)
 
 * スプラトゥーン3でもstat.inkへバトルを記録！「s3s」導入手順:[https://vanillasalt.net/2022/10/10/how-to-use-s3s/](https://vanillasalt.net/2022/10/10/how-to-use-s3s/)
 
