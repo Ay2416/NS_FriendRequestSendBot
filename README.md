@@ -124,6 +124,24 @@ MIT License & GNU General Public License v3.0↓
 
 * 【Discord】テキスト(文字)を装飾する方法【色付けの方法も！】：[https://dorokin.com/discord_text](https://dorokin.com/discord_text)
 
+* Pythonで経過時間や日時（日付・時刻）の差分を測定・算出：[https://note.nkmk.me/python-datetime-timedelta-measure-time/](https://note.nkmk.me/python-datetime-timedelta-measure-time/)
+
+* Pythonで現在時刻・日付・日時を取得:：[https://note.nkmk.me/python-datetime-now-today/](https://note.nkmk.me/python-datetime-now-today/)
+
+* ke!san+ UNIX時間⇒日付変換：[https://keisan.casio.jp/exec/system/1526004418](https://keisan.casio.jp/exec/system/1526004418)
+
+* 【Python】exit・return プログラム終了・処理終了：[https://pg-chain.com/python-exit-return](https://pg-chain.com/python-exit-return)
+
+* Products How to delete an element in a json file python：[https://stackoverflow.com/questions/71764921/how-to-delete-an-element-in-a-json-file-python](https://stackoverflow.com/questions/71764921/how-to-delete-an-element-in-a-json-file-python)
+
+* Teratail ＢＯＴのステータスにＢＯＴが利用されているサーバーの数を表示させたい：[https://teratail.com/questions/331326](https://teratail.com/questions/331326)
+
+* Pythonで辞書の要素を削除するclear, pop, popitem, del：[https://note.nkmk.me/python-dict-clear-pop-popitem-del/](https://note.nkmk.me/python-dict-clear-pop-popitem-del/)
+
+* pythonでjsonのファイルを追記保存するの面倒やんけ!!(ndjsonの紹介)：[https://qiita.com/eg_i_eg/items/aff02f6057b476cb15fa](https://qiita.com/eg_i_eg/items/aff02f6057b476cb15fa)
+
+* GoogleスプレッドシートTIPS Googleスプレッドシートで指定セル以後の行（列）を全て範囲指定する方法：[https://plugins.co.jp/2020/10/google-spreadsheet-tips-range/](https://plugins.co.jp/2020/10/google-spreadsheet-tips-range/)
+
 * スプラトゥーン3でもstat.inkへバトルを記録！「s3s」導入手順：[https://vanillasalt.net/2022/10/10/how-to-use-s3s/](https://vanillasalt.net/2022/10/10/how-to-use-s3s/)
 
 * imink API Documentation - Github：[https://github.com/JoneWang/imink/wiki/imink-API-Documentation](https://github.com/JoneWang/imink/wiki/imink-API-Documentation)
@@ -235,6 +253,28 @@ Sorry, Almost Japanese site...
 * Pythonでファイル・ディレクトリを削除するos.remove, shutil.rmtreeなど:[https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/](https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/)
 
 * 【Discord】テキスト(文字)を装飾する方法【色付けの方法も！】:[https://dorokin.com/discord_text](https://dorokin.com/discord_text)
+
+* Pythonでファイル・ディレクトリを削除するos.remove, shutil.rmtreeなど：[https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/](https://note.nkmk.me/python-os-remove-rmdir-removedirs-shutil-rmtree/)
+
+* 【Discord】テキスト(文字)を装飾する方法【色付けの方法も！】：[https://dorokin.com/discord_text](https://dorokin.com/discord_text)
+
+* Pythonで経過時間や日時（日付・時刻）の差分を測定・算出:[https://note.nkmk.me/python-datetime-timedelta-measure-time/](https://note.nkmk.me/python-datetime-timedelta-measure-time/)
+
+* Pythonで現在時刻・日付・日時を取得:[https://note.nkmk.me/python-datetime-now-today/](https://note.nkmk.me/python-datetime-now-today/)
+
+* ke!san+ UNIX時間⇒日付変換:[https://keisan.casio.jp/exec/system/1526004418](https://keisan.casio.jp/exec/system/1526004418)
+
+* 【Python】exit・return プログラム終了・処理終了:[https://pg-chain.com/python-exit-return](https://pg-chain.com/python-exit-return)
+
+* Products How to delete an element in a json file python:[https://stackoverflow.com/questions/71764921/how-to-delete-an-element-in-a-json-file-python](https://stackoverflow.com/questions/71764921/how-to-delete-an-element-in-a-json-file-python)
+
+* Teratail ＢＯＴのステータスにＢＯＴが利用されているサーバーの数を表示させたい:[https://teratail.com/questions/331326](https://teratail.com/questions/331326)
+
+* Pythonで辞書の要素を削除するclear, pop, popitem, del:[https://note.nkmk.me/python-dict-clear-pop-popitem-del/](https://note.nkmk.me/python-dict-clear-pop-popitem-del/)
+
+* pythonでjsonのファイルを追記保存するの面倒やんけ!!(ndjsonの紹介):[https://qiita.com/eg_i_eg/items/aff02f6057b476cb15fa](https://qiita.com/eg_i_eg/items/aff02f6057b476cb15fa)
+
+* GoogleスプレッドシートTIPS Googleスプレッドシートで指定セル以後の行（列）を全て範囲指定する方法:[https://plugins.co.jp/2020/10/google-spreadsheet-tips-range/](https://plugins.co.jp/2020/10/google-spreadsheet-tips-range/)
 
 * スプラトゥーン3でもstat.inkへバトルを記録！「s3s」導入手順:[https://vanillasalt.net/2022/10/10/how-to-use-s3s/](https://vanillasalt.net/2022/10/10/how-to-use-s3s/)
 
