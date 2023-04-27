@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from time import sleep
 from mk8dx import lounge_api
 import glob
-# import ndjson
+#import ndjson
 import time
 
 # friendcode.py import
@@ -39,58 +39,43 @@ rsess = requests.Session()
 @client.event
 async def on_ready():
     print("接続しました！")
-    await client.change_presence(activity=discord.Game(name="Ver.0.8 beta | /help"))
+    await client.change_presence(activity=discord.Game(name="Ver.1.0 | /help"))
     await tree.sync()#スラッシュコマンドを同期
     print("グローバルコマンド同期完了！")
+    
+    # setup_json, user_jsonフォルダがあるかの確認
+    files = glob.glob('./*')
+
+    judge = 0
+    for i in range(0, len(files)):
+        #print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == "setup_json"):
+            print("setup_jsonファイルを確認しました！")
+            judge = 1
+            break
+
+    if judge != 1:
+        os.mkdir('setup_json')
+        print("setup_jsonファイルがなかったため作成しました！！")
+
+    judge = 0
+    for i in range(0, len(files)):
+        #print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == "user_json"):
+            print("user_jsonファイルを確認しました！")
+            judge = 1
+            break
+
+    if judge != 1:
+        os.mkdir('user_json')
+        print("user_jsonファイルがなかったため作成しました！！")
 
 # /test
 @tree.command(name="test",description="テストコマンドです。")
 async def test_command(interaction: discord.Interaction,text:str):
     await interaction.response.defer(ephemeral=False)
-    
-    '''
-    print(interaction.guild.id)
-    
-    file = glob.glob('./setup_json/*.json')
-    for i in range(0, len(file)):
-        print(os.path.split(file[i])[1])
-        if(os.path.split(file[i])[1] == str(interaction.user.id) + ".json"):
-            print("一致しました！")
-            break
-
-    naiyou = {
-        "東京":{
-            "population": 1300,
-            "capital": "東京"
-        },
-        "北海道":{
-            "population": 538,
-            "capital": "札幌市"
-        },
-        "沖縄":{
-            "population": 143,
-            "capital": "那覇市"
-        }
-    }
-
-    print(interaction.user.id)
-
-    file = str(interaction.user.id) + ".json"
-    with open('./setup_json/' + file, 'w') as f:
-        json.dump(naiyou, f, ensure_ascii=False)
-    '''
 
     await interaction.followup.send("> " + text + "\n> " + text)
-
-# /setup_start
-#@tree.command(name="setup_start",description="セットアップを開始します。")
-#async def setup_start(interaction: discord.Interaction):
-#    if using != "" or using != 0:
-#        using = 1
-#        print(using)
-#        await interaction.response.send_message("セットアップを開始します。**/setup_step1**を実行し、その後に**/setup_step2**を実行してください。",ephemeral=False)
-#    else:
-#        await interaction.response.send_message(":x:現在他の方が使用しています。:x:",ephemeral=False)
 
 # /setup_step1
 @tree.command(name="setup_step1",description="ニンテンドーアカウント認証用のリンクを作ります。")
@@ -397,14 +382,16 @@ async def help(interaction: discord.Interaction):
         embed.add_field(name="/fr [SWを除くフレンドコード（例：1234-5678-9012）]", value="セットアップしたアカウントから指定のフレンドコードに対して、フレンド申請を行います。「,」で区切ることで複数人に対してフレンド申請を送ることが可能です。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
         embed.add_field(name="/lounge_fr [MK8DXラウンジ名]", value="セットアップしたアカウントから入力されたMK8DXラウンジ名の人に対して、フレンド申請を行います。「,」で区切ることで複数人に対してフレンド申請を送ることが可能です。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
         embed.add_field(name="/spreadsheet_fr [共有リンク] [シート名] [範囲（Excelの「○○:○○」の指定方法に準ずる）]", value="セットアップしたアカウントからスプレッドシートの指定された範囲のフレンドコードに対してフレンド申請を行います。\nフレンドコードはSWを除く形（例：1234-5678-9012）で書いてください。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
-        embed.set_footer(text="※こちらから詳しい使い方を確認してください!↓\nhttps://ay2416.github.io/Discord_NSO-FriendRequestSendBot/")
+        # embed.set_footer(text="※こちらから詳しい使い方を確認してください!↓\nhttps://ay2416.github.io/NSO-FriendRequestSendBot/")
+        embed.add_field(name="※こちらから詳しい使い方を確認してください!↓", value="https://ay2416.github.io/NSO-FriendRequestSendBot/", inline=False)
         await interaction.response.send_message(embed=embed,ephemeral=False)
 
 # /server_num
 @tree.command(name="server_num",description="導入されているサーバー数を取得します。")
 async def server_num(interaction: discord.Interaction):
         embed=discord.Embed(title="導入サーバー数", description=str(len(client.guilds)) + " サーバー")
-        await interaction.response.send_message(embed=embed,ephemeral=False)
+        
+        await interaction.response.send_message(embed=embed)
 
 # /fr
 @tree.command(name="fr",description="フレンドコードからフレンド申請を行います。")
@@ -515,7 +502,7 @@ async def fr_command(interaction: discord.Interaction,code:str):
         await interaction.response.send_message(embed=embed,ephemeral=False)
 
 # /lounge_fr
-@tree.command(name="lounge_fr",description="ラウンジの名前からフレンド申請を行います。")
+@tree.command(name="lounge_fr",description="MK8DXラウンジの名前からフレンド申請を行います。")
 async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
     files = glob.glob('./user_json/*.json')
     judge = 0
@@ -667,7 +654,7 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
             return
 
         web_token = jsn["web_token"]["web_token"]
-        spreadsheet_apikey = "your_apikey"
+        spreadsheet_apikey = "your_api_key"
         allmessage = ""
         message = ""
         
