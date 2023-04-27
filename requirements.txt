@@ -1,0 +1,5 @@
+discord.py
+ndjson
+python-dateutil
+python-dotenv
+requests
