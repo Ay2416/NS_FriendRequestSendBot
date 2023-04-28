@@ -52,7 +52,7 @@ Sorry, edtitting... / 編集中です…。
 編集中
 
 ## ライセンス
-MIT License & GNU General Public License v3.0↓
+MIT License <!-- & GNU General Public License v3.0 -->↓
 
 [https://github.com/Ay2416/Discord_NSO-FriendRequestSendBot/blob/main/LICENSE](https://github.com/Ay2416/Discord_NSO-FriendRequestSendBot/blob/main/LICENSE)
 
