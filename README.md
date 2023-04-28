@@ -7,7 +7,7 @@ Sorry, edtitting... / 編集中です…。
 ## 注意！ / Attention!
 * 初心者のコードです。 / Beginner code.
 
-* ファイルを分けて技術がまだないため、1つのファイルに全てのプログラムが書いてあります。/ I don't split file. One file write all program.
+* ファイルを分ける技術がまだないため、1つのファイルに全てのプログラムが書いてあります。/ I don't split file. One file write all program.
 
 ## 課題 / Problems
 <!-- * 現状では1人が限界で、複数人同時使用ができない。 / This bot use 1 people limit. Many people not work this bot. !-->
