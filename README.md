@@ -71,6 +71,8 @@ MIT License & GNU General Public License v3.0↓
 
 * JoneWang / imink：[https://github.com/JoneWang/imink](https://github.com/JoneWang/imink)
 
+* mink-app/f-API：[https://github.com/imink-app/f-API](https://github.com/imink-app/f-API)
+
 * Discord Embed Generator：[https://cog-creators.github.io/discord-embed-sandbox/](https://cog-creators.github.io/discord-embed-sandbox/)
 
 ## 参考にしたサイト
