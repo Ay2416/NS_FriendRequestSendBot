@@ -4,11 +4,12 @@ from discord import app_commands
 from discord import ui
 import os
 from dotenv import load_dotenv
-from time import sleep
+#from time import sleep
 from mk8dx import lounge_api
 import glob
 #import ndjson
 import time
+import asyncio
 
 # friendcode.py import
 import base64
@@ -26,6 +27,7 @@ import webbrowser
 
 # Discordボットのプログラム部分
 load_dotenv()
+spreadsheet_apikey = "your_google_spreadsheet_api_key"
 
 intents = discord.Intents.default()#適当に。
 client = discord.Client(intents=intents)
@@ -39,12 +41,24 @@ rsess = requests.Session()
 @client.event
 async def on_ready():
     print("接続しました！")
-    await client.change_presence(activity=discord.Game(name="Ver.1.0 | /help"))
+    await client.change_presence(activity=discord.Game(name="Ver.1.1 | /help"))
     await tree.sync()#スラッシュコマンドを同期
-    print("グローバルコマンド同期完了！")
+    print("グローバルコマンド同期完了！") 
     
-    # setup_json, user_jsonフォルダがあるかの確認
+    # guild_ndjson, setup_json, user_json, language_jsonフォルダがあるかの確認
     files = glob.glob('./*')
+    judge = 0
+    
+    for i in range(0, len(files)):
+        #print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == "guild_ndjson"):
+            print("guild_ndjsonファイルを確認しました！")
+            judge = 1
+            break
+
+    if judge != 1:
+        os.mkdir('guild_ndjson')
+        print("guild_ndjsonファイルがなかったため作成しました！")
 
     judge = 0
     for i in range(0, len(files)):
@@ -69,17 +83,87 @@ async def on_ready():
     if judge != 1:
         os.mkdir('user_json')
         print("user_jsonファイルがなかったため作成しました！！")
+    
+    judge = 0
+    for i in range(0, len(files)):
+        #print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == "language_json"):
+            print("language_jsonファイルを確認しました！")
+            judge = 1
+            break
+
+    if judge != 1:
+        os.mkdir('language_json')
+        print("language_jsonファイルがなかったため作成しました！！")
+
+# サーバーに招待された場合に特定の処理をする
+@client.event
+async def on_guild_join(guild):
+    file = str(guild.id) + ".json"
+
+    content = {
+        "language_mode" : "ja"
+    }
+
+    with open('./language_json/' + file, 'w') as f:
+        json.dump(content, f, ensure_ascii=False)
+
+# サーバーからキック、BANされた場合に特定の処理をする
+@client.event
+async def on_guild_remove(guild):
+    file = str(guild.id) + ".json"
+    os.remove("./language_json/" + file)
 
 # /test
-@tree.command(name="test",description="テストコマンドです。")
+@tree.command(name="test",description="テストコマンドです。 / Test command.")
 async def test_command(interaction: discord.Interaction,text:str):
     await interaction.response.defer(ephemeral=False)
 
     await interaction.followup.send("> " + text + "\n> " + text)
 
+# /language
+@tree.command(name="language",description="言語を変更します。（jaまたはen） / Change language. (ja or en)")
+@discord.app_commands.choices(language=[discord.app_commands.Choice(name="ja",value="ja"),discord.app_commands.Choice(name="en",value="en")])
+async def language_command(interaction: discord.Interaction,language:str):
+    files = glob.glob('./language_json/*.json')
+    judge = 0
+
+    for i in range(0, len(files)):
+        print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == str(interaction.guild.id) + ".json"):
+            print("一致しました！")
+            judge = 1
+            break
+        else:
+            judge = 0
+    
+    file = str(interaction.guild.id) + ".json"
+
+    if(judge == 1):
+        os.remove("./language_json/" + file)
+
+    content = {
+        "language_mode" : language
+    }
+
+    with open('./language_json/' + file, 'w') as f:
+        json.dump(content, f, ensure_ascii=False)
+
+    if language == "ja":
+        await interaction.response.send_message("日本語に変更しました。", ephemeral=False)
+    elif language == "en":
+        await interaction.response.send_message("Change English.", ephemeral=False)         
+
 # /setup_step1
-@tree.command(name="setup_step1",description="ニンテンドーアカウント認証用のリンクを作ります。")
+@tree.command(name="setup_step1",description="ニンテンドーアカウント認証用のリンクを作ります。/ Generate nintendo account login link.")
 async def setup_step1(interaction: discord.Interaction):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
 
     print("STEP 1: アカウント情報を取得するためブラウザを開きます")
 
@@ -114,16 +198,31 @@ async def setup_step1(interaction: discord.Interaction):
     with open('./setup_json/' + str(interaction.user.id) + ".json", 'w') as f:
         json.dump(content, f, ensure_ascii=False)
     
-    embed=discord.Embed(title="こちらでニンテンドーアカウントにログインしてください。", color=0xffffff)
-    embed.add_field(name="・ログインしましたら、", value="　", inline=False)
-    embed.add_field(name="パソコンの場合", value="「この人にする」ボタンを右クリックし「リンクアドレスをコピー」を選択して/setup_step2コマンドの[link_address]の部分でペーストしてください。", inline=False)
-    embed.add_field(name="スマホの場合", value="「この人にする」ボタンを長押しして、「リンクアドレスをコピー」を選択して/setup_step2コマンドの[link_address]に部分でペーストしてください。", inline=False)
-    embed.add_field(name="⇩URL⇩", value=oauth_uri, inline=False)
+    if language == "ja":
+        embed=discord.Embed(title="こちらでニンテンドーアカウントにログインしてください。", color=0xffffff)
+        embed.add_field(name="・ログインしましたら、", value="　", inline=False)
+        embed.add_field(name="パソコンの場合", value="「この人にする」ボタンを右クリックし「リンクアドレスをコピー」を選択して/setup_step2コマンドの[link_address]の部分でペーストしてください。", inline=False)
+        embed.add_field(name="スマホの場合", value="「この人にする」ボタンを長押しして、「リンクアドレスをコピー」を選択して/setup_step2コマンドの[link_address]に部分でペーストしてください。", inline=False)
+        embed.add_field(name="⇩URL⇩", value=oauth_uri, inline=False)
+    elif language == "en":
+        embed=discord.Embed(title="Please login to your Nintendo account here.", color=0xffffff)
+        embed.add_field(name="・When I logged in,", value="　", inline=False)
+        embed.add_field(name="For PC", value="Right click on the [Make this person] button, select [Copy link address] and paste it in the [link_address] section of the /setup_step2 command.", inline=False)
+        embed.add_field(name="For phones,", value="Press and hold the [Make this person] button, select [Copy link address] and paste it in the [link_address] portion of the /setup_step2 command.", inline=False)
+        embed.add_field(name="⇩URL⇩", value=oauth_uri, inline=False)
     await interaction.response.send_message(embed=embed,ephemeral=True)
 
 # /setup_step2
-@tree.command(name="setup_step2",description="/setup_step1のリンクアドレスを貼り付け、セットアップを開始します。")    
+@tree.command(name="setup_step2",description="/setup_step1のリンクアドレスを貼り付け、セットアップを開始します。 / /setup_step1 link paste, and start setup.")    
 async def setup_step2(interaction: discord.Interaction, link_address:str):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
     files = glob.glob('./setup_json/*.json')
     judge = 0
 
@@ -163,7 +262,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
 
         if not redirect_uri_parsed:
             print("Invalid redirect URI, aborting...")
-            embed=discord.Embed(title="Error!", description=":x:Invalid redirect URI, aborting...:x:", color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:無効なリダイレクトURIです！:x:", color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Invalid redirect URI, aborting...:x:", color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
             #sys.exit(1)
@@ -174,7 +276,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
 
         if state != response_state:
             print("Invalid redirect URI (bad OAuth state), aborting...")
-            embed=discord.Embed(title="Error!", description=":x:Invalid redirect URI (bad OAuth state), aborting...:x:", color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="Error!", description=":x:無効なリダイレクトURIです！（OAuthが原因）:x:", color=0xff0000)
+            elif language == "en":    
+                embed=discord.Embed(title="Error!", description=":x:Invalid redirect URI (bad OAuth state), aborting...:x:", color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
             #sys.exit(1)
@@ -192,7 +297,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
         })
         if resp.status_code != 200:
             print("Error obtaining session token from Nintendo, aborting... ({})".format(resp.text))
-            embed=discord.Embed(title="Error!", description=":x:Error obtaining session token from Nintendo, aborting... ({}):x:".format(resp.text), color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:任天堂からのセッショントークンの取得に失敗しました。 ({}):x:".format(resp.text), color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Error obtaining session token from Nintendo, aborting... ({}):x:".format(resp.text), color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
             #sys.exit(1)
@@ -211,7 +319,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
         })
         if resp.status_code != 200:
             print("Error obtaining service token from Nintendo, aborting... ({})".format(resp.text))
-            embed=discord.Embed(title="Error!", description=":x:Error obtaining service token from Nintendo, aborting... ({}):x:".format(resp.text), color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:任天堂からサービストークンを取得する際にエラーが発生しました。 ({}):x:".format(resp.text), color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Error obtaining service token from Nintendo, aborting... ({}):x:".format(resp.text), color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
             #sys.exit(1)
@@ -231,7 +342,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
         })
         if resp.status_code != 200:
             print("Error obtaining account data from Nintendo, aborting... ({})".format(resp.text))
-            embed=discord.Embed(title="Error!", description=":x:Error obtaining account data from Nintendo, aborting... ({}):x:".format(resp.text), color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:任天堂からアカウントデータを取得する際にエラーが発生しました。 ({}):x:".format(resp.text), color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Error obtaining account data from Nintendo, aborting... ({}):x:".format(resp.text), color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
             #sys.exit(1)
@@ -261,7 +375,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
         })
         if resp.status_code != 200:
             print("Error obtaining auth hash from Eli Fessler's S2S server, aborting... ({})".format(resp.text))
-            embed=discord.Embed(title="Error!", description=":x:Error obtaining auth hash from Eli Fessler's S2S server, aborting... ({}):x:".format(resp.text), color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:Eli FesslerのS2Sサーバーから認証ハッシュを取得する際にエラーが発生しました。 ({}):x:".format(resp.text), color=0xff0000)           
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Error obtaining auth hash from Eli Fessler's S2S server, aborting... ({}):x:".format(resp.text), color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
             #sys.exit(1)
@@ -285,7 +402,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
         #print(flapg_resp.json)
         if flapg_resp.status_code != 200:
             print("Error obtaining f-code from imink API, aborting... ({})".format(flapg_resp.text))
-            embed=discord.Embed(title="Error!", description="Error obtaining f-code from imink API, aborting... ({})".format(flapg_resp.text), color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description="imink APIからf-codeを取得する際にエラーが発生しました。 ({})".format(flapg_resp.text), color=0xff0000)           
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description="Error obtaining f-code from imink API, aborting... ({})".format(flapg_resp.text), color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
 
@@ -315,7 +435,10 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
 
         if resp.status_code != 200 or "errorMessage" in resp.json():
             print("Error logging into Switch API, aborting... ({})".format(resp.text))
-            embed=discord.Embed(title="Error!", description=":x:Error logging into Switch API, aborting... ({}):x:".format(resp.text), color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:Switch APIへのログインでエラーが発生しました。 ({}):x:".format(resp.text), color=0xff0000)            
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Error logging into Switch API, aborting... ({}):x:".format(resp.text), color=0xff0000)
             await interaction.followup.send(embed=embed)
             return
             #sys.exit(1)
@@ -337,16 +460,30 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
 
         print("準備完了!")
         os.remove("./setup_json/" + str(interaction.user.id) + ".json")
-        embed=discord.Embed(title="Success!", description="認証成功！\n2時間後に認証が切れてしまいますのでそれ以上使う場合はもう1度/setup_step1,/setup_step2コマンドを実行してください。", color=0x00ff40)
+        if language == "ja":
+            embed=discord.Embed(title="成功しました!", description="認証成功！\n2時間後に認証が切れてしまいますのでそれ以上使う場合はもう1度/setup_step1,/setup_step2コマンドを実行してください。", color=0x00ff40)
+        elif language == "en":
+            embed=discord.Embed(title="Success!", description="Authentication succeeded!\nThe authentication will expire after 2 hours, so please execute the /setup_step1,/setup_step2 command once more if you want to use it longer.", color=0x00ff40)
         await interaction.followup.send(embed=embed)
     else:
         print("Error!:最初に/setup_step1コマンドでセットアップを行ってください。")
-        embed=discord.Embed(title="Error!", description="最初に/setup_step1コマンドでセットアップを行ってください。", color=0xff0000)
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="最初に/setup_step1コマンドでセットアップを行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="First, please use the /setup_step1 command to set up the system.", color=0xff0000)
         await interaction.response.send_message(embed=embed,ephemeral=False)
 
 # /finish
-@tree.command(name="finish",description="フレンド申請のプログラムを終了させます。")
+@tree.command(name="finish",description="フレンド申請のプログラムを終了させます。 / Finish friend request program.")
 async def finish(interaction: discord.Interaction):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
     files = glob.glob('./user_json/*.json')
     judge = 0
 
@@ -363,39 +500,85 @@ async def finish(interaction: discord.Interaction):
         os.remove("./user_json/" + str(interaction.user.id) + ".json")
 
         print("User data deleted.")
-        embed=discord.Embed(title="終了処理が完了しました！", description="また使う際は、/setup_step1,/setup_step2コマンドを行ってからご使用ください！", color=0x00ff40)
+        if language == "ja":
+            embed=discord.Embed(title="終了処理が完了しました！", description="また使う際は、/setup_step1,/setup_step2コマンドを行ってからご使用ください！", color=0x00ff40)
+        elif language == "en":
+            embed=discord.Embed(title="The termination process has been completed!", description="When using it again, please do the /setup_step1 and /setup_step2 commands before use!", color=0x00ff40)           
         await interaction.response.send_message(embed=embed)
     else:
         print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
-        embed=discord.Embed(title="Error!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="First, please use the /setup_step1, /setup_step2 command to set up the system.", color=0xff0000)
         await interaction.response.send_message(embed=embed,ephemeral=False)
 
 # /help
-@tree.command(name="help",description="コマンドについての簡単な使い方を出します。")
+@tree.command(name="help",description="コマンドについての簡単な使い方を出します。 / Command details.")
 async def help(interaction: discord.Interaction):
-        embed=discord.Embed(title="Command list")
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
+    if language == "ja":
+        embed=discord.Embed(title="コマンドリスト")
         embed.add_field(name="/setup_step1", value="このBotを使うに当たってセットアップに必要な任天堂アカウントログイン用のURLを発行します。", inline=False)
         embed.add_field(name="/setup_step2 [/setup_step1でコピーをしたURL]", value="このBotを使うに当たってセットアップに必要なセットアップを完了させます。", inline=False)
         embed.add_field(name="/finish", value="このBotでの処理を終了し、セットアップが必要な初期状態に戻します。\n（※使い終わったら必ず実行してください。次回以降の使用に影響が出る可能性があります。）", inline=False)
         embed.add_field(name="/help", value="このBotのコマンドの簡単な使い方を出します。", inline=False)
+        embed.add_field(name="/language [ja/en]", value="言語を変更します。", inline=False)
         embed.add_field(name="/server_num", value="このBotの導入されているサーバー数を表示します。", inline=False)
         embed.add_field(name="/fr [SWを除くフレンドコード（例：1234-5678-9012）]", value="セットアップしたアカウントから指定のフレンドコードに対して、フレンド申請を行います。「,」で区切ることで複数人に対してフレンド申請を送ることが可能です。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
         embed.add_field(name="/lounge_fr [MK8DXラウンジ名]", value="セットアップしたアカウントから入力されたMK8DXラウンジ名の人に対して、フレンド申請を行います。「,」で区切ることで複数人に対してフレンド申請を送ることが可能です。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
         embed.add_field(name="/spreadsheet_fr [共有リンク] [シート名] [範囲（Excelの「○○:○○」の指定方法に準ずる）]", value="セットアップしたアカウントからスプレッドシートの指定された範囲のフレンドコードに対してフレンド申請を行います。\nフレンドコードはSWを除く形（例：1234-5678-9012）で書いてください。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
-        # embed.set_footer(text="※こちらから詳しい使い方を確認してください!↓\nhttps://ay2416.github.io/NSO-FriendRequestSendBot/")
         embed.add_field(name="※こちらから詳しい使い方を確認してください!↓", value="https://ay2416.github.io/NSO-FriendRequestSendBot/", inline=False)
+    elif language == "en":
+        embed=discord.Embed(title="Command list")
+        embed.add_field(name="/setup_step1", value="The URL for the Nintendo account login required for setup when using this bot will be issued.", inline=False)
+        embed.add_field(name="/setup_step2 [URL copied in /setup_step1]", value="Complete the setup required to use this bot.", inline=False)
+        embed.add_field(name="/finish", value="Terminates the process with this bot and returns it to the initial state where setup is required.\n(*Be sure to execute this after you have finished using the bot. It may affect the next and subsequent uses.)", inline=False)
+        embed.add_field(name="/help", value="I will give a brief usage of this bot's commands.", inline=False)
+        embed.add_field(name="/language [ja/en]", value="Change language.", inline=False)
+        embed.add_field(name="/server_num", value="Displays the number of servers where this bot is installed.", inline=False)
+        embed.add_field(name="/fr [Friend code excluding SW (e.g., 1234-5678-9012)]", value="A friend request will be sent to the specified friend code from the set up account. You can send a friend request to multiple people by separating them with [,].\n(* Available after completing /setup_step1 and /setup_step2)", inline=False)
+        embed.add_field(name="/lounge_fr [MK8DX Lounge name]", value="A friend request will be sent from your setup account to the person with the MK8DX lounge name entered. You can send a friend request to multiple people by separating them with [,].\n(* Available after completing /setup_step1 and /setup_step2)", inline=False)
+        embed.add_field(name="/spreadsheet_fr [Share link] [sheet name(e.g., sheet1)] [Range (similar to how XX:XX is specified in Excel)]", value="Make a friend request from the set up account to the friend code in the range specified in the spreadsheet. Please write the \n friend code in the form excluding SW (e.g. 1234-5678-9012).\n(*Available after completing /setup_step1,/setup_step2)", inline=False)
+        #embed.add_field(name="※こちらから詳しい使い方を確認してください!↓", value="https://ay2416.github.io/NSO-FriendRequestSendBot/", inline=False)
         await interaction.response.send_message(embed=embed,ephemeral=False)
 
 # /server_num
-@tree.command(name="server_num",description="導入されているサーバー数を取得します。")
+@tree.command(name="server_num",description="導入されているサーバー数を取得します。 / View server num.")
 async def server_num(interaction: discord.Interaction):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
+    if language == "ja":
         embed=discord.Embed(title="導入サーバー数", description=str(len(client.guilds)) + " サーバー")
-        
-        await interaction.response.send_message(embed=embed)
+    elif language == "en":
+        embed=discord.Embed(title="Number of servers installed", description=str(len(client.guilds)) + " server")
+    
+    await interaction.response.send_message(embed=embed)
 
 # /fr
-@tree.command(name="fr",description="フレンドコードからフレンド申請を行います。")
+@tree.command(name="fr",description="フレンドコードからフレンド申請を行います。 / Friend code friend request.")
 async def fr_command(interaction: discord.Interaction,code:str):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
     files = glob.glob('./user_json/*.json')
     judge = 0
     response_num = 0
@@ -417,7 +600,11 @@ async def fr_command(interaction: discord.Interaction,code:str):
         
         if time.time() - jsn["time"]["time"] >= 7200:
                 print("Error!:前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。")
-                embed=discord.Embed(title="Error!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
+                if language == "ja":
+                    embed=discord.Embed(title="エラー!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
+                elif language == "en":
+                    embed=discord.Embed(title="Error!", description="It has been two hours since the last authentication.\nPlease execute the /setup_step1 and /setup_step2 commands to authenticate again.", color=0xff0000)
+                   
                 os.remove("./user_json/" + str(interaction.user.id) + ".json")
                 await interaction.response.send_message(embed=embed,ephemeral=False)
                 return
@@ -453,10 +640,13 @@ async def fr_command(interaction: discord.Interaction,code:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error searching for friend code, aborting... ({})".format(resp.text))
-                    message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
+                    if language == "ja":
+                        message = "> エラー! :x:フレンドコードの検索でエラーが発生しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                    elif language == "en":
+                        message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
                     allmessage = allmessage + message + "\n"
                     await interaction.edit_original_response(content=allmessage)
-                    sleep(10)
+                    await asyncio.sleep(10)
                     continue
                     #sys.exit(1)
                 print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
@@ -476,34 +666,54 @@ async def fr_command(interaction: discord.Interaction,code:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error sending friend request, aborting... ({})".format(resp.text))
-                    message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
+                    if language == "ja":
+                        message = "> エラー! :x:フレンドリクエストの送信に失敗しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                    elif language == "en":
+                        message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
                     allmessage = allmessage + message + "\n"
                     await interaction.edit_original_response(content=allmessage)
-                    sleep(10)
+                    await asyncio.sleep(10)
                     continue
                     #sys.exit(1)
                 print("フレンド申請を送信しました")
-                message = "> " + friend_name + "さんにフレンド申請しました！"
+                if language == "ja":
+                    message = "> " + friend_name + "さんにフレンド申請しました！"
+                elif language == "en":
+                    message = "> Friend request has been sent to" + friend_name + "!"  
                 allmessage = allmessage + message + "\n"
                 await interaction.edit_original_response(content=allmessage)
-                sleep(10)
+                await asyncio.sleep(10)
             else:
                 print("Error!:Not friend code! your typing code:" + friend_code)
-                message = "> Error! :x:Not friend code!:x: ```your typing code:" + friend_code + "\n```"
+                if language == "ja":
+                    message = "> Error! :x:フレンドコードではありません!:x: ```該当するフレンドコード:" + friend_code + "\n```"
+                elif language == "en":    
+                    message = "> Error! :x:Not friend code!:x: ```your typing code:" + friend_code + "\n```"
                 allmessage = allmessage + message + "\n"
                 await interaction.edit_original_response(content=allmessage)
-                sleep(10)
+                await asyncio.sleep(10)
                 continue
 
         print("Success!:全ての処理が終わりました！")
     else:
         print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
-        embed=discord.Embed(title="Error!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="First, please use the /setup_step1, /setup_step2 command to set up the system.", color=0xff0000)
         await interaction.response.send_message(embed=embed,ephemeral=False)
 
 # /lounge_fr
-@tree.command(name="lounge_fr",description="MK8DXラウンジの名前からフレンド申請を行います。")
+@tree.command(name="lounge_fr",description="MK8DXラウンジの名前からフレンド申請を行います。 / Lounge name friend request.")
 async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
     files = glob.glob('./user_json/*.json')
     judge = 0
     response_num = 0
@@ -524,11 +734,15 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
             jsn = json.load(f)
 
         if time.time() - jsn["time"]["time"] >= 7200:
-            print("Error!:前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。")
-            embed=discord.Embed(title="Error!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
-            os.remove("./user_json/" + str(interaction.user.id) + ".json")
-            await interaction.response.send_message(embed=embed,ephemeral=False)
-            return
+                print("Error!:前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。")
+                if language == "ja":
+                    embed=discord.Embed(title="エラー!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
+                elif language == "en":
+                    embed=discord.Embed(title="Error!", description="It has been two hours since the last authentication.\nPlease execute the /setup_step1 and /setup_step2 commands to authenticate again.", color=0xff0000)
+                   
+                os.remove("./user_json/" + str(interaction.user.id) + ".json")
+                await interaction.response.send_message(embed=embed,ephemeral=False)
+                return
 
         await interaction.response.defer()
 
@@ -577,10 +791,13 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error searching for friend code, aborting... ({})".format(resp.text))
-                    message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing lounge name:" + name_data[i] + "\n> {}```".format(resp.text)
+                    if language == "ja":
+                        message = "> エラー! :x:フレンドコードの検索でエラーが発生しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                    elif language == "en":
+                        message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
                     allmessage = allmessage + message + "\n"
                     await interaction.edit_original_response(content=allmessage)
-                    sleep(10)
+                    await asyncio.sleep(10)
                     continue
                     #sys.exit(1)
                 print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
@@ -601,34 +818,55 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
                     print("Error sending friend request, aborting... ({})".format(resp.text))
-                    message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing lounge name:" + name_data[i] + "\n> {}```".format(resp.text)
+                    if language == "ja":
+                        message = "> エラー! :x:フレンドリクエストの送信に失敗しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                    elif language == "en":
+                        message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
                     allmessage = allmessage + message + "\n"
                     await interaction.edit_original_response(content=allmessage)
-                    sleep(10)
+                    await asyncio.sleep(10)
                     continue
                     #sys.exit(1)
                 print("フレンド申請を送信しました")
-                message = "> " + friend_name + "さんにフレンド申請しました！"
+                if language == "ja":
+                    message = "> " + friend_name + "さんにフレンド申請しました！"
+                elif language == "en":
+                    message = "> Friend request has been sent to" + friend_name + "!"
                 allmessage = allmessage + message + "\n"
                 await interaction.edit_original_response(content=allmessage)
-                sleep(10)
+                await asyncio.sleep(10)
             else:
                 print("Error!:Not friend code! your typing lounge name Not found!:" + name_data[i])
-                message = "> Error! :x:Not friend code!:x: ```your typing lounge name Not found!:" + name_data[i] + "\n> ```"
+                if language == "ja":
+                    message = "> Error! :x:フレンドコードではありません!:x: ```該当するフレンドコード:" + friend_code + "\n```"
+                elif language == "en":    
+                    message = "> Error! :x:Not friend code!:x: ```your typing code:" + friend_code + "\n```"
                 allmessage = allmessage + message + "\n"
                 await interaction.edit_original_response(content=allmessage)
-                sleep(10)
+                await asyncio.sleep(10)
                 continue
         
         print("Success!:全ての処理が終わりました！")
     else:
-        embed=discord.Embed(title="Error!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="First, please use the /setup_step1, /setup_step2 command to set up the system.", color=0xff0000)
         await interaction.response.send_message(embed=embed,ephemeral=False)
         #await interaction.response.send_message("test message",ephemeral=False)
 
 # /spreadsheet_fr
-@tree.command(name="spreadsheet_fr",description="スプレッドシートの指定の範囲にあるフレンドコードに対してフレンド申請を行います。")
+@tree.command(name="spreadsheet_fr",description="スプレッドシートの指定の範囲にあるフレンドコードに対してフレンド申請を行います。 / Spreadsheet friend request.")
 async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_url:str,sheet_name:str,selected_range:str):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
     files = glob.glob('./user_json/*.json')
     judge = 0
     response_num = 0
@@ -648,13 +886,16 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
         
         if time.time() - jsn["time"]["time"] >= 7200:
             print("Error!:前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。")
-            embed=discord.Embed(title="Error!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description="It has been two hours since the last authentication.\nPlease execute the /setup_step1 and /setup_step2 commands to authenticate again.", color=0xff0000)
+
             os.remove("./user_json/" + str(interaction.user.id) + ".json")
             await interaction.response.send_message(embed=embed,ephemeral=False)
             return
 
         web_token = jsn["web_token"]["web_token"]
-        spreadsheet_apikey = "your_api_key"
         allmessage = ""
         message = ""
         
@@ -688,7 +929,10 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
             print('')
             # debug message finish
 
-            embed=discord.Embed(title="Error!", description=":x:Not Support Link or No Link!:x:", color=0xff0000)
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:このリンクはサポートされていないか、リンクではありません！:x:", color=0xff0000)
+            elif language == "en":    
+                embed=discord.Embed(title="Error!", description=":x:Not Support Link or No Link!:x:", color=0xff0000)
             await interaction.response.send_message(embed=embed,ephemeral=False)
         
         if re.match('[\w][\d]:[\w][\d]', selected_range) or re.match('[\w][\d][\d]:[\w][\d][\d]', selected_range):
@@ -738,10 +982,13 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
                     })
                     if resp.status_code != 200 or "errorMessage" in resp.json():
                         print("Error searching for friend code, aborting... ({})".format(resp.text))
-                        message = "> Error! :x:Error searching for friend code, aborting...:x: ```friend code:" + friend_code + "\n> {}```".format(resp.text)
+                        if language == "ja":
+                            message = "> エラー! :x:フレンドコードの検索でエラーが発生しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                        elif language == "en":
+                            message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
                         allmessage = allmessage + message + "\n"
                         await interaction.edit_original_response(content=allmessage)
-                        sleep(10)
+                        await asyncio.sleep(10)
                         continue
                         #sys.exit(1)
                     print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
@@ -762,34 +1009,49 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
                     })
                     if resp.status_code != 200 or "errorMessage" in resp.json():
                         print("Error sending friend request, aborting... ({})".format(resp.text))
-                        message = "> Error! :x:Error sending friend request, aborting...:x: ```friend code:" + friend_code + "\n> {}```".format(resp.text)
+                        if language == "ja":
+                            message = "> エラー! :x:フレンドリクエストの送信に失敗しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                        elif language == "en":
+                            message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
                         allmessage = allmessage + message + "\n"
                         await interaction.edit_original_response(content=allmessage)
-                        sleep(10)
+                        await asyncio.sleep(10)
                         continue
                         #sys.exit(1)
                     print("フレンド申請を送信しました")
-                    message = "> " + friend_name + "さんにフレンド申請しました！"
+                    if language == "ja":
+                        message = "> " + friend_name + "さんにフレンド申請しました！"
+                    elif language == "en":
+                        message = "> Friend request has been sent to" + friend_name + "!"  
                     allmessage = allmessage + message + "\n"
                     await interaction.edit_original_response(content=allmessage)
-                    sleep(10)
+                    await asyncio.sleep(10)
                 else:
                     print("Error!:Not friend code! friend code:" + friend_code)
-                    message = "> Error! :x:Not friend code!:x: ```friend code:" + friend_code + "```"
+                    if language == "ja":
+                        message = "> Error! :x:フレンドコードではありません!:x: ```該当するフレンドコード:" + friend_code + "```"
+                    elif language == "en":    
+                        message = "> Error! :x:Not friend code!:x: ```your typing code:" + friend_code + "```"
                     allmessage = allmessage + message + "\n"
                     await interaction.edit_original_response(content=allmessage)
-                    sleep(10)
+                    await asyncio.sleep(10)
                     continue
         else:
-            print("Error!:Not Support!")
-            embed=discord.Embed(title="Error!", description=":x:Not Support!:x:", color=0xff0000)
+            print("Error!:Not support range!")
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:この範囲指定はサポートしていません！:x:", color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Not support range!:x:", color=0xff0000)
             await interaction.response.send_message(embed=embed,ephemeral=False)
 
         print("Success!:全ての処理が終わりました！")
 
     else:
         print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
-        embed=discord.Embed(title="Error!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="First, please use the /setup_step1, /setup_step2 command to set up the system.", color=0xff0000)
         await interaction.response.send_message(embed=embed,ephemeral=False)
 
 client.run(os.environ['token'])
