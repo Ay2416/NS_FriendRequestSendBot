@@ -1,5 +1,6 @@
 # Discord_NS_FriendRequestSendBot
 ## 現在このBotは使用することができません。/ Can't use now.
+## また、使うことを推奨しません。（※ニンテンドーアカウント等凍結してしまう可能性もあります。） / Use not recommend.(※Nintendo Account freeze possible.)
 
 Sorry, edtitting... / 編集中です…。
 
