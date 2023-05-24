@@ -1,9 +1,11 @@
 # Discord_NS_FriendRequestSendBot
+## 現在このBotは使用することができません。/ Don't use now.
+
 Sorry, edtitting... / 編集中です…。
 
 ## Botの招待 / Invite Bot
-[Invite Link](https://discord.com/api/oauth2/authorize?client_id=1088789200486285462&permissions=2684582976&scope=bot%20applications.commands 
-)
+<!--[Invite Link](https://discord.com/api/oauth2/authorize?client_id=1088789200486285462&permissions=2684582976&scope=bot%20applications.commands 
+)-->
 ## 注意！ / Attention!
 * 初心者のコードです。 / Beginner code.
 
