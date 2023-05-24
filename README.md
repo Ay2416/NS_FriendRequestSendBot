@@ -1,5 +1,5 @@
 # Discord_NS_FriendRequestSendBot
-## 現在このBotは使用することができません。/ Don't use now.
+## 現在このBotは使用することができません。/ Can't use now.
 
 Sorry, edtitting... / 編集中です…。
 
