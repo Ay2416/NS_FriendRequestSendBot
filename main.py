@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 #from time import sleep
 from mk8dx import lounge_api
 import glob
-#import ndjson
+import ndjson
 import time
 import asyncio
 
@@ -41,9 +41,9 @@ rsess = requests.Session()
 @client.event
 async def on_ready():
     print("接続しました！")
-    await client.change_presence(activity=discord.Game(name="Ver.1.1 | /help"))
+    await client.change_presence(activity=discord.Game(name="Ver.2.0 | /help"))
     await tree.sync()#スラッシュコマンドを同期
-    print("グローバルコマンド同期完了！") 
+    print("グローバルコマンド同期完了！")
     
     # guild_ndjson, setup_json, user_json, language_jsonフォルダがあるかの確認
     files = glob.glob('./*')
@@ -118,7 +118,7 @@ async def on_guild_remove(guild):
 @tree.command(name="test",description="テストコマンドです。 / Test command.")
 async def test_command(interaction: discord.Interaction,text:str):
     await interaction.response.defer(ephemeral=False)
-
+    
     await interaction.followup.send("> " + text + "\n> " + text)
 
 # /language
@@ -293,7 +293,7 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
             "session_token_code": session_token_code,
             "session_token_code_verifier": verifier
         }, headers={
-            "User-Agent": "OnlineLounge/2.5.0 NASDKAPI Android"
+            "User-Agent": "OnlineLounge/2.5.1 NASDKAPI Android"
         })
         if resp.status_code != 200:
             print("Error obtaining session token from Nintendo, aborting... ({})".format(resp.text))
@@ -315,7 +315,7 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
             "session_token": session_token,
             "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer-session-token"
         }, headers={
-            "User-Agent": "OnlineLounge/2.5.0 NASDKAPI Android"
+            "User-Agent": "OnlineLounge/2.5.1 NASDKAPI Android"
         })
         if resp.status_code != 200:
             print("Error obtaining service token from Nintendo, aborting... ({})".format(resp.text))
@@ -337,7 +337,7 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
         # def get_nintendo_account_data(access_token):
         # This fetches information about the currently logged-in user, including locale, country and birthday (needed later)
         resp = rsess.get("https://api.accounts.nintendo.com/2.0.0/users/me", headers={
-            "User-Agent": "OnlineLounge/2.5.0 NASDKAPI Android",
+            "User-Agent": "OnlineLounge/2.5.1 NASDKAPI Android",
             "Authorization": "Bearer {}".format(access_token)
         })
         if resp.status_code != 200:
@@ -428,8 +428,8 @@ async def setup_step2(interaction: discord.Interaction, link_address:str):
             }
         }, headers={
             "Content-Type": "application/json; charset=utf-8",
-            "User-Agent": "com.nintendo.znca/2.5.0 (Android/10)",
-            "X-ProductVersion": "2.5.0",
+            "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
+            "X-ProductVersion": "2.5.1",
             "X-Platform": "Android"
         })
 
@@ -535,6 +535,10 @@ async def help(interaction: discord.Interaction):
         embed.add_field(name="/fr [SWを除くフレンドコード（例：1234-5678-9012）]", value="セットアップしたアカウントから指定のフレンドコードに対して、フレンド申請を行います。「,」で区切ることで複数人に対してフレンド申請を送ることが可能です。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
         embed.add_field(name="/lounge_fr [MK8DXラウンジ名]", value="セットアップしたアカウントから入力されたMK8DXラウンジ名の人に対して、フレンド申請を行います。「,」で区切ることで複数人に対してフレンド申請を送ることが可能です。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
         embed.add_field(name="/spreadsheet_fr [共有リンク] [シート名] [範囲（Excelの「○○:○○」の指定方法に準ずる）]", value="セットアップしたアカウントからスプレッドシートの指定された範囲のフレンドコードに対してフレンド申請を行います。\nフレンドコードはSWを除く形（例：1234-5678-9012）で書いてください。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
+        embed.add_field(name="/sstemplate_set [登録したいテンプレート名] [共有リンク] [シート名] [範囲（Excelの「○○:○○」の指定方法に準ずる）]", value="/sstemplate_frを実行するためのテンプレートの登録を行います。", inline=False)
+        embed.add_field(name="/sstemplate_list", value="/sstemplate_frを実行するためのテンプレートの一覧を表示します。", inline=False)
+        embed.add_field(name="/sstemplate_delete [登録したテンプレート名]", value="/sstemplate_frを実行するためのテンプレートの削除を行います。", inline=False)
+        embed.add_field(name="/sstemplate_fr [登録したテンプレート名]", value="セットアップしたアカウントからテンプレート登録したスプレッドシートの指定された範囲のフレンドコードに対してフレンド申請を行います。\n（※/setup_step1,/setup_step2を完了後に使用可能）", inline=False)
         embed.add_field(name="※こちらから詳しい使い方を確認してください!↓", value="https://ay2416.github.io/NSO-FriendRequestSendBot/", inline=False)
     elif language == "en":
         embed=discord.Embed(title="Command list")
@@ -547,8 +551,12 @@ async def help(interaction: discord.Interaction):
         embed.add_field(name="/fr [Friend code excluding SW (e.g., 1234-5678-9012)]", value="A friend request will be sent to the specified friend code from the set up account. You can send a friend request to multiple people by separating them with [,].\n(* Available after completing /setup_step1 and /setup_step2)", inline=False)
         embed.add_field(name="/lounge_fr [MK8DX Lounge name]", value="A friend request will be sent from your setup account to the person with the MK8DX lounge name entered. You can send a friend request to multiple people by separating them with [,].\n(* Available after completing /setup_step1 and /setup_step2)", inline=False)
         embed.add_field(name="/spreadsheet_fr [Share link] [sheet name(e.g., sheet1)] [Range (similar to how XX:XX is specified in Excel)]", value="Make a friend request from the set up account to the friend code in the range specified in the spreadsheet. Please write the \n friend code in the form excluding SW (e.g. 1234-5678-9012).\n(*Available after completing /setup_step1,/setup_step2)", inline=False)
+        embed.add_field(name="/sstemplate_set [Name of template you want to register] [Share link] [sheet name(e.g., sheet1)] [Range (similar to how XX:XX is specified in Excel)]", value="Register a template to run /sstemplate_fr.", inline=False)
+        embed.add_field(name="/sstemplate_list", value="List of templates to run /sstemplate_fr.", inline=False)
+        embed.add_field(name="/sstemplate_delete [Registered template name]", value="Delete templates to run /sstemplate_fr.", inline=False)
+        embed.add_field(name="/sstemplate_fr [Registered template name]", value="Friend request from the setup account to the specified range of friend codes in the template-registered spreadsheet.\n(*available after completing /setup_step1 and /setup_step2)", inline=False)
         #embed.add_field(name="※こちらから詳しい使い方を確認してください!↓", value="https://ay2416.github.io/NSO-FriendRequestSendBot/", inline=False)
-        await interaction.response.send_message(embed=embed,ephemeral=False)
+    await interaction.response.send_message(embed=embed,ephemeral=False)
 
 # /server_num
 @tree.command(name="server_num",description="導入されているサーバー数を取得します。 / View server num.")
@@ -635,7 +643,7 @@ async def fr_command(interaction: discord.Interaction,code:str):
                     }
                 }, headers={
                     "Content-Type": "application/json; charset=utf-8",
-                    "User-Agent": "com.nintendo.znca/2.5.0 (Android/10)",
+                    "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
                     "Authorization": "Bearer {}".format(web_token)
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
@@ -661,7 +669,7 @@ async def fr_command(interaction: discord.Interaction,code:str):
                     }
                 }, headers={
                     "Content-Type": "application/json; charset=utf-8",
-                    "User-Agent": "com.nintendo.znca/2.5.0 (Android/10)",
+                    "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
                     "Authorization": "Bearer {}".format(web_token)
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
@@ -786,7 +794,7 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
                     }
                 }, headers={
                     "Content-Type": "application/json; charset=utf-8",
-                    "User-Agent": "com.nintendo.znca/2.5.0 (Android/10)",
+                    "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
                     "Authorization": "Bearer {}".format(web_token)
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
@@ -813,7 +821,7 @@ async def lounge_fr_command(interaction: discord.Interaction,lounge_name:str):
                     }
                 }, headers={
                     "Content-Type": "application/json; charset=utf-8",
-                    "User-Agent": "com.nintendo.znca/2.5.0 (Android/10)",
+                    "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
                     "Authorization": "Bearer {}".format(web_token)
                 })
                 if resp.status_code != 200 or "errorMessage" in resp.json():
@@ -977,7 +985,7 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
                         }
                     }, headers={
                         "Content-Type": "application/json; charset=utf-8",
-                        "User-Agent": "com.nintendo.znca/2.5.0 (Android/10)",
+                        "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
                         "Authorization": "Bearer {}".format(web_token)
                     })
                     if resp.status_code != 200 or "errorMessage" in resp.json():
@@ -1004,7 +1012,7 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
                         }
                     }, headers={
                         "Content-Type": "application/json; charset=utf-8",
-                        "User-Agent": "com.nintendo.znca/2.5.0 (Android/10)",
+                        "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
                         "Authorization": "Bearer {}".format(web_token)
                     })
                     if resp.status_code != 200 or "errorMessage" in resp.json():
@@ -1053,5 +1061,662 @@ async def spreadsheet_fr_command(interaction: discord.Interaction,spreadsheet_ur
         elif language == "en":
             embed=discord.Embed(title="Error!", description="First, please use the /setup_step1, /setup_step2 command to set up the system.", color=0xff0000)
         await interaction.response.send_message(embed=embed,ephemeral=False)
+
+    files = glob.glob('./user_json/*.json')
+    judge = 0
+    response_num = 0
+
+    for i in range(0, len(files)):
+        print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == str(interaction.user.id) + ".json"):
+            print("一致しました！")
+            judge = 1
+            break
+        else:
+            judge = 0
+    
+    if(judge == 1):
+        with open('./user_json/' + str(interaction.user.id) + ".json") as f:
+            jsn = json.load(f)
+        
+        if time.time() - jsn["time"]["time"] >= 7200:
+            print("Error!:前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。")
+            embed=discord.Embed(title="エラー!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
+            os.remove("./user_json/" + str(interaction.user.id) + ".json")
+            await interaction.response.send_message(embed=embed,ephemeral=False)
+            return
+
+        web_token = jsn["web_token"]["web_token"]
+        allmessage = ""
+        message = ""
+        
+        if spreadsheet_url[0:37] == 'https://docs.google.com/spreadsheets/':
+            # debug message start
+            print('-Change start-')
+            print('')
+
+            print(spreadsheet_url)
+            print('')
+
+            url = spreadsheet_url[39:]
+            print(url)
+            print('')
+
+            id = url.split('/')[0]
+            print(id)
+            print('')
+
+            print('-Change finish!-')
+            print('')
+        else:
+            # debug message start
+            print('-Change start!-')
+            print('')
+
+            print('Error!:Not Support Link or No Link!')
+            print('')
+
+            print('-Change finish!-')
+            print('')
+            # debug message finish
+
+            embed=discord.Embed(title="エラー!", description=":x:このリンクはサポートされていないか、リンクではありません！:x:", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)
+        
+        if re.match('[\w][\d]:[\w][\d]', selected_range) or re.match('[\w][\d][\d]:[\w][\d][\d]', selected_range):
+            await interaction.response.defer()
+
+            url = requests.get("https://sheets.googleapis.com/v4/spreadsheets/1myKshELYBcxFjydTSRzWK7qjuXHddQcU9SAbQ2TkXY0/values/シート1!J6:J17?key=" + spreadsheet_apikey)
+            text = url.text
+
+            data = json.loads(text)
+
+            #codedata = data["values"]
+            print(data["values"])
+
+            codedata = []
+            for i in range(0, len(data["values"])):
+                codedata.append(data["values"][i][0])
+            
+            print(codedata)
+            # num = len(codedata)
+            # print(num)
+            # print(codedata[0][0])
+
+            for i in range(0, len(codedata)):
+                # def search_friend_code(web_token):
+                friend_code = codedata[i]
+
+                message = "**" + str(i+1) + ". " + friend_code + "**"
+                if(response_num == 0):
+                    allmessage = allmessage + message + "\n"
+                    await interaction.followup.send(allmessage)
+                    response_num = 1
+                else:
+                    allmessage = allmessage + "\n"
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+
+                if re.match('[\d]{4}-[\d]{4}-[\d]{4}$', friend_code):
+
+                    resp = rsess.post("https://api-lp1.znc.srv.nintendo.net/v3/Friend/GetUserByFriendCode", json={
+                        "parameter": {
+                            "friendCode": friend_code
+                        }
+                    }, headers={
+                        "Content-Type": "application/json; charset=utf-8",
+                        "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
+                        "Authorization": "Bearer {}".format(web_token)
+                    })
+                    if resp.status_code != 200 or "errorMessage" in resp.json():
+                        print("Error searching for friend code, aborting... ({})".format(resp.text))
+                        message = "> エラー! :x:フレンドコードの検索でエラーが発生しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                        allmessage = allmessage + message + "\n"
+                        await interaction.edit_original_response(content=allmessage)
+                        await asyncio.sleep(10)
+                        continue
+                        #sys.exit(1)
+                    print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
+                    friend_name = resp.json()["result"]["name"]
+
+                    nsaId = resp.json()["result"]["nsaId"]
+
+                    nsa_id = nsaId
+
+                    resp = rsess.post("https://api-lp1.znc.srv.nintendo.net/v3/FriendRequest/Create", json={
+                        "parameter": {
+                            "nsaId": nsa_id
+                        }
+                    }, headers={
+                        "Content-Type": "application/json; charset=utf-8",
+                        "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
+                        "Authorization": "Bearer {}".format(web_token)
+                    })
+                    if resp.status_code != 200 or "errorMessage" in resp.json():
+                        print("Error sending friend request, aborting... ({})".format(resp.text))
+                        message = "> エラー! :x:フレンドリクエストの送信に失敗しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                        allmessage = allmessage + message + "\n"
+                        await interaction.edit_original_response(content=allmessage)
+                        await asyncio.sleep(10)
+                        continue
+                        #sys.exit(1)
+                    print("フレンド申請を送信しました")
+                    message = "> " + friend_name + "さんにフレンド申請しました！"
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    await asyncio.sleep(10)
+                else:
+                    print("Error!:Error! :x:Not friend code! friend code:" + friend_code)
+                    message = "> Error! :x:フレンドコードではありません!:x: ```該当するフレンドコード:" + friend_code + "```"
+                    allmessage = allmessage + message + "\n"
+                    await interaction.edit_original_response(content=allmessage)
+                    await asyncio.sleep(10)
+                    continue
+        else:
+            print("Error!:Not support Range!")
+            embed=discord.Embed(title="エラー!", description=":x:この範囲指定はサポートしていません！:x:", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)
+
+        print("Success!:全ての処理が終わりました！")
+    else:
+        print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
+        embed=discord.Embed(title="エラー!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+        await interaction.response.send_message(embed=embed,ephemeral=False)
+
+# /sstemplate_set
+@tree.command(name="sstemplate_set",description="/sstemplate_frで実行するためのテンプレートを作成します。 / Create  to use [/sstemplate_fr] command template.")
+async def sstemplate_set_command(interaction: discord.Interaction,template_name:str,spreadsheet_url:str,sheet_name:str,selected_range:str):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
+    files = glob.glob('./guild_ndjson/*.ndjson')
+    judge = 0
+
+    for i in range(0, len(files)):
+        print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == str(interaction.guild.id) + ".ndjson"):
+            print("一致しました！")
+            judge = 1
+            break
+        else:
+            judge = 0
+    
+    if(judge == 1):
+        file = str(interaction.guild.id) + ".ndjson"
+        with open('./guild_ndjson/' + file) as f:
+                    read_data = ndjson.load(f)
+        
+        for i in range(0, len(read_data)):
+            if template_name == read_data[i]["template_name"]:
+                if language == "ja":
+                    embed=discord.Embed(title="エラー!", description=":x:既に同じ名前のテンプレートがあります。:x:", color=0xff0000)
+                elif language == "en":
+                    embed=discord.Embed(title="Error!", description=":x:There is already a template with the same name.:x:", color=0xff0000)                    
+                await interaction.response.send_message(embed=embed)
+
+        if spreadsheet_url[0:37] == 'https://docs.google.com/spreadsheets/':
+            # debug message start
+            print('-Change start-')
+            print('')
+
+            print(spreadsheet_url)
+            print('')
+
+            url = spreadsheet_url[39:]
+            print(url)
+            print('')
+
+            id = url.split('/')[0]
+            print(id)
+            print('')
+
+            print('-Change finish!-')
+            print('')
+        else:
+            # debug message start
+            print('-Change start!-')
+            print('')
+
+            print('Error!:Not Support Link or No Link!')
+            print('')
+
+            print('-Change finish!-')
+            print('')
+            # debug message finish
+
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:このリンクはサポートされていないか、リンクではありません！:x:", color=0xff0000)
+            elif language == "en":    
+                embed=discord.Embed(title="Error!", description=":x:Not Support Link or No Link!:x:", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)
+        
+        if re.match('[\w][\d]:[\w][\d]', selected_range) or re.match('[\w][\d][\d]:[\w][\d][\d]', selected_range):
+            await interaction.response.defer()
+            content = {
+                "template_name" : template_name,
+                "spreadsheet_id": id,
+                "sheet_name": sheet_name,
+                "selected_range" : selected_range
+            }
+
+            file = str(interaction.guild.id) + ".ndjson"
+            with open('./guild_ndjson/' + file, 'a') as f:
+                writer = ndjson.writer(f)
+                writer.writerow(content)
+
+            '''with open('./guild_ndjson/' + file) as f:
+                read_data = ndjson.load(f)'''
+
+            print("Success!:" + template_name + "として入力された内容を保存しました。")
+            if language == "ja":
+                embed=discord.Embed(title="成功しました!", description=template_name + "として入力された内容を保存しました。", color=0x00ff7f)
+            elif language == "en":
+                embed=discord.Embed(title="Success!", description="Saved what was entered as " + template_name + ".", color=0x00ff7f)
+            await interaction.followup.send(embed=embed) 
+            
+        else:
+            print("Error!:Not support range!")
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:この範囲指定はサポートしていません！:x:", color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Not support range!:x:", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)
+        
+    else:
+        if spreadsheet_url[0:37] == 'https://docs.google.com/spreadsheets/':
+            # debug message start
+            print('-Change start-')
+            print('')
+
+            print(spreadsheet_url)
+            print('')
+
+            url = spreadsheet_url[39:]
+            print(url)
+            print('')
+
+            id = url.split('/')[0]
+            print(id)
+            print('')
+
+            print('-Change finish!-')
+            print('')
+        else:
+            # debug message start
+            print('-Change start!-')
+            print('')
+
+            print('Error!:Not Support Link or No Link!')
+            print('')
+
+            print('-Change finish!-')
+            print('')
+            # debug message finish
+
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:このリンクはサポートされていないか、リンクではありません！:x:", color=0xff0000)
+            elif language == "en":    
+                embed=discord.Embed(title="Error!", description=":x:Not Support Link or No Link!:x:", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)
+        
+        if re.match('[\w][\d]:[\w][\d]', selected_range) or re.match('[\w][\d][\d]:[\w][\d][\d]', selected_range):
+            await interaction.response.defer()
+            content = {
+                "template_name" : template_name,
+                "spreadsheet_id": id,
+                "sheet_name": sheet_name,
+                "selected_range" : selected_range
+            }
+
+            # print(interaction.guild.id)
+
+            file = str(interaction.guild.id) + ".ndjson"
+            with open('./guild_ndjson/' + file, 'a') as f:
+                writer = ndjson.writer(f)
+                writer.writerow(content)
+
+            print("Success!:" + template_name + "として入力された内容を保存しました。")
+            if language == "ja":
+                embed=discord.Embed(title="成功しました!", description=template_name + "として入力された内容を保存しました。", color=0x00ff7f)
+            elif language == "en":
+                embed=discord.Embed(title="Success!", description="Saved what was entered as " + template_name + ".", color=0x00ff7f)
+            await interaction.followup.send(embed=embed) 
+            
+        else:
+            print("Error!:Not support range!")
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description=":x:この範囲指定はサポートしていません！:x:", color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description=":x:Not support range!:x:", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)
+
+# /sstemplate_delete
+@tree.command(name="sstemplate_delete",description="/sstemplate_frで実行するためのテンプレートを削除します。 / Delete to use [/sstemplate_fr] command template.")
+async def sstemplate_delete_command(interaction: discord.Interaction,template_name:str):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
+    files = glob.glob('./guild_ndjson/*.ndjson')
+    judge = 0
+
+    for i in range(0, len(files)):
+        print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == str(interaction.guild.id) + ".ndjson"):
+            print("一致しました！")
+            judge = 1
+            break
+        else:
+            judge = 0
+    
+    if(judge == 1):
+        file = str(interaction.guild.id) + ".ndjson"
+        with open('./guild_ndjson/' + file) as f:
+                read_data = ndjson.load(f)
+                
+        if len(read_data) == 1:
+            os.remove('./guild_ndjson/' + file)
+            print("Success!:" + template_name + "を削除しました。また、今回の削除を行ったことでこのサーバーのテンプレートが何もない状態となりました。")
+            if language == "ja":
+                embed=discord.Embed(title="成功しました!", description=template_name + "を削除しました。\nまた、今回の削除を行ったことでこのサーバーのテンプレートが何もない状態となりました。", color=0x00ff7f)
+            elif language == "en":
+                embed=discord.Embed(title="Success!", description=template_name + " was deleted. In addition, this deletion has resulted in a blank template for this server.", color=0x00ff7f)     
+            await interaction.response.send_message(embed=embed)
+        else:
+            data_write = 0
+
+            for i in range(0, len(read_data)):
+                if template_name == read_data[i]["template_name"]:
+                    del read_data[i]
+                    data_write = 1
+                    break
+
+            if data_write == 1:
+                for i in range(0, len(read_data)):
+                    with open('./guild_ndjson/' + file, 'a') as f:
+                        writer = ndjson.writer(f)
+                        writer.writerow(read_data[i])
+            
+                print("Success!:" + template_name + "を削除しました。")
+                if language == "ja":
+                    embed=discord.Embed(title="成功しました!", description=template_name + "を削除しました。", color=0x00ff7f)
+                elif language == "en":
+                        embed=discord.Embed(title="Success!", description=template_name + " was deleted.", color=0x00ff7f)
+                await interaction.response.send_message(embed=embed)
+            else:
+                print("Error!:" + template_name + "は存在しません。")
+                if language == "ja":
+                    embed=discord.Embed(title="エラー!", description=template_name + "は存在しません。", color=0xff0000)
+                elif language == "en":
+                    embed=discord.Embed(title="Error!", description=template_name + " does not exist.", color=0xff0000)
+                await interaction.response.send_message(embed=embed)
+
+    else:
+        print("Error!:/sstemplate_setコマンドでテンプレート登録を行ってください。")
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="/sstemplate_setコマンドでテンプレート登録を行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="Please use the /sstemplate_set command to register your template.", color=0xff0000)
+        await interaction.response.send_message(embed=embed,ephemeral=False)
+
+# /sstemplate_list
+@tree.command(name="sstemplate_list",description="/sstemplate_frで実行するためのテンプレートの一覧を表示します。 / View list to use [/sstemplate_fr] command template.")
+async def sstemplate_delete_command(interaction: discord.Interaction):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
+    files = glob.glob('./guild_ndjson/*.ndjson')
+    judge = 0
+
+    for i in range(0, len(files)):
+        print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == str(interaction.guild.id) + ".ndjson"):
+            print("一致しました！")
+            judge = 1
+            break
+        else:
+            judge = 0
+
+    if(judge == 1):
+        file = str(interaction.guild.id) + ".ndjson"
+        with open('./guild_ndjson/' + file) as f:
+                read_data = ndjson.load(f)
+        
+        '''if(len(read_data) == 0):
+            print("Error!:テンプレートが存在しません。/sstemplate_setコマンドでテンプレート登録を行ってください。")
+            embed=discord.Embed(title="Error!", description="テンプレートが存在しません。\n/sstemplate_setコマンドでテンプレート登録を行ってください。", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)'''
+        if language == "ja":
+            embed=discord.Embed(title="成功しました!", color=0x00ff7f)
+        elif language == "en":
+            embed=discord.Embed(title="Success!", color=0x00ff7f)
+        for i in range(0, len(read_data)):
+            if language == "ja":
+                embed.add_field(name=read_data[i]["template_name"], value="スプレッドシートURL:" + "https://docs.google.com/spreadsheets/d/"+ read_data[i]["spreadsheet_id"] +"/edit?usp=sharing\nsheet_name:" + read_data[i]["sheet_name"] + "\n範囲:" + read_data[i]["selected_range"], inline=False)
+            elif language == "en":
+                embed.add_field(name=read_data[i]["template_name"], value="spreadsheet_url:" + "https://docs.google.com/spreadsheets/d/"+ read_data[i]["spreadsheet_id"] +"/edit?usp=sharing\nsheet_name:" + read_data[i]["sheet_name"] + "\nselected_range:" + read_data[i]["selected_range"], inline=False)
+        
+        with open('./guild_ndjson/' + file, 'w') as f:
+                ndjson.dump(read_data, f)
+        
+        print("データ出力に成功しました！")
+        await interaction.response.send_message(embed=embed) 
+    else:
+        print("Error!:テンプレートが存在しません。/sstemplate_setコマンドでテンプレート登録を行ってください。")
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="テンプレートが存在しません。\n/sstemplate_setコマンドでテンプレート登録を行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="The template does not exist.\nPlease use the /sstemplate_set command to register the template.", color=0xff0000)
+        await interaction.response.send_message(embed=embed,ephemeral=False)
+
+# /sstemplate_fr
+@tree.command(name="sstemplate_fr",description="テンプレート登録してあるスプレッドシートにあるフレンドコードに対してフレンド申請を行います。 / Spreadsheet template friend request.")
+async def sstemplate_fr_command(interaction: discord.Interaction,template_name:str):
+    # 言語の確認
+    file = str(interaction.guild.id) + ".json"
+
+    with open('./language_json/' + file) as f:
+        read_data = ndjson.load(f)
+
+    language = read_data[0]["language_mode"]
+
+    files = glob.glob('./user_json/*.json')
+    judge = 0
+    response_num = 0
+
+    for i in range(0, len(files)):
+        print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == str(interaction.user.id) + ".json"):
+            print("一致しました！")
+            judge = 1
+            break
+        else:
+            judge = 0
+      
+    files = glob.glob('./guild_ndjson/*.ndjson')
+    name_judge = 0
+
+    for i in range(0, len(files)):
+        print(os.path.split(files[i])[1])
+        if(os.path.split(files[i])[1] == str(interaction.guild.id) + ".ndjson"):
+            print("ギルドも一致しました！")
+            name_judge = 1
+            break
+        else:
+            name_judge = 0
+    
+    if(name_judge != 1):
+        print("Error!:テンプレートが存在しません。\n/sstemplate_setコマンドでテンプレートを設定してください。")
+        if language == "ja":
+            embed=discord.Embed(title="エラー!", description="テンプレートが存在しません。\n/sstemplate_setコマンドでテンプレート登録を行ってください。", color=0xff0000)
+        elif language == "en":
+            embed=discord.Embed(title="Error!", description="The template does not exist.\nPlease use the /sstemplate_set command to register the template.", color=0xff0000)
+        await interaction.response.send_message(embed=embed,ephemeral=False)
+    else:
+        if(judge == 1):
+            with open('./user_json/' + str(interaction.user.id) + ".json") as f:
+                jsn = json.load(f)
+            
+            if time.time() - jsn["time"]["time"] >= 7200:
+                print("Error!:前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。")
+                if language == "ja":
+                    embed=discord.Embed(title="エラー!", description="前回の認証から2時間たってしまいました。\n再度認証が必要ですので、/setup_step1,/setup_step2コマンドの実行をお願いします。", color=0xff0000)
+                elif language == "en":
+                    embed=discord.Embed(title="Error!", description="It has been two hours since the last authentication.\nPlease execute the /setup_step1 and /setup_step2 commands to authenticate again.", color=0xff0000)
+                os.remove("./user_json/" + str(interaction.user.id) + ".json")
+                await interaction.response.send_message(embed=embed,ephemeral=False)
+                return
+  
+            web_token = jsn["web_token"]["web_token"]
+            allmessage = ""
+            message = ""
+            
+            id = ""
+            sheet_name = ""
+            selected_range = ""
+            file = str(interaction.guild.id) + ".ndjson"
+
+            with open('./guild_ndjson/' + file) as f:
+                read_data = ndjson.load(f)
+        
+            for i in range(0, len(read_data)):
+                if template_name == read_data[i]["template_name"]:
+                    id = read_data[i]["spreadsheet_id"]
+                    sheet_name = read_data[i]["sheet_name"]
+                    selected_range = read_data[i]["selected_range"]
+                    break
+
+            if re.match('[\w][\d]:[\w][\d]', selected_range) or re.match('[\w][\d][\d]:[\w][\d][\d]', selected_range):
+                await interaction.response.defer()
+
+                url = requests.get("https://sheets.googleapis.com/v4/spreadsheets/" + id + "/values/" + sheet_name + "!" + selected_range + "?key=+" + spreadsheet_apikey)
+                text = url.text
+
+                data = json.loads(text)
+
+                #codedata = data["values"]
+                #print(data["values"])
+
+                codedata = []
+                for i in range(0, len(data["values"])):
+                    codedata.append(data["values"][i][0])
+                
+                # print(codedata)
+                # num = len(codedata)
+                # print(num)
+                # print(codedata[0][0])
+
+                for i in range(0, len(codedata)):
+                    # def search_friend_code(web_token):
+                    friend_code = codedata[i]
+
+                    message = "**" + str(i+1) + ". " + friend_code + "**"
+                    if(response_num == 0):
+                        allmessage = allmessage + message + "\n"
+                        await interaction.followup.send(allmessage)
+                        response_num = 1
+                    else:
+                        allmessage = allmessage + "\n"
+                        allmessage = allmessage + message + "\n"
+                        await interaction.edit_original_response(content=allmessage)
+
+                    if re.match('[\d]{4}-[\d]{4}-[\d]{4}$', friend_code):
+
+                        resp = rsess.post("https://api-lp1.znc.srv.nintendo.net/v3/Friend/GetUserByFriendCode", json={
+                            "parameter": {
+                                "friendCode": friend_code
+                            }
+                        }, headers={
+                            "Content-Type": "application/json; charset=utf-8",
+                            "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
+                            "Authorization": "Bearer {}".format(web_token)
+                        })
+                        if resp.status_code != 200 or "errorMessage" in resp.json():
+                            print("Error searching for friend code, aborting... ({})".format(resp.text))
+                            if language == "ja":
+                                message = "> エラー! :x:フレンドコードの検索でエラーが発生しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                            elif language == "en":
+                                message = "> Error! :x:Error searching for friend code, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
+                            allmessage = allmessage + message + "\n"
+                            await interaction.edit_original_response(content=allmessage)
+                            await asyncio.sleep(10)
+                            continue
+                            #sys.exit(1)
+                        print("{}さんにフレンド申請します".format(resp.json()["result"]["name"]))
+                        friend_name = resp.json()["result"]["name"]
+
+                        nsaId = resp.json()["result"]["nsaId"]
+
+                        nsa_id = nsaId
+
+                        resp = rsess.post("https://api-lp1.znc.srv.nintendo.net/v3/FriendRequest/Create", json={
+                            "parameter": {
+                                "nsaId": nsa_id
+                            }
+                        }, headers={
+                            "Content-Type": "application/json; charset=utf-8",
+                            "User-Agent": "com.nintendo.znca/2.5.1 (Android/10)",
+                            "Authorization": "Bearer {}".format(web_token)
+                        })
+                        if resp.status_code != 200 or "errorMessage" in resp.json():
+                            print("Error sending friend request, aborting... ({})".format(resp.text))
+                            if language == "ja":
+                                message = "> エラー! :x:フレンドリクエストの送信に失敗しました。:x: ```該当するフレンドコード:" + friend_code + "\n> {}```".format(resp.text)
+                            elif language == "en":
+                                message = "> Error! :x:Error sending friend request, aborting...:x: ```your typing code:" + friend_code + "\n> {}```".format(resp.text)
+                            allmessage = allmessage + message + "\n"
+                            await interaction.edit_original_response(content=allmessage)
+                            await asyncio.sleep(10)
+                            continue
+                            #sys.exit(1)
+                        print("フレンド申請を送信しました")
+                        if language == "ja":
+                            message = "> " + friend_name + "さんにフレンド申請しました！"
+                        elif language == "en":
+                            message = "> Friend request has been sent to" + friend_name + "!"  
+                        allmessage = allmessage + message + "\n"
+                        await interaction.edit_original_response(content=allmessage)
+                        await asyncio.sleep(10)
+                    else:
+                        print("Error!:Not friend code! friend code:" + friend_code)
+                        if language == "ja":
+                            message = "> Error! :x:フレンドコードではありません!:x: ```該当するフレンドコード:" + friend_code + "```"
+                        elif language == "en":    
+                            message = "> Error! :x:Not friend code!:x: ```your typing code:" + friend_code + "```"
+                        allmessage = allmessage + message + "\n"
+                        await interaction.edit_original_response(content=allmessage)
+                        await asyncio.sleep(10)
+                        continue
+            else:
+                print("Error!:Not support range!")
+                if language == "ja":
+                    embed=discord.Embed(title="エラー!", description=":x:この範囲指定はサポートしていません！:x:", color=0xff0000)
+                elif language == "en":
+                    embed=discord.Embed(title="Error!", description=":x:Not support range!:x:", color=0xff0000)
+                await interaction.response.send_message(embed=embed,ephemeral=False)
+           
+            print("Success!:全ての処理が終わりました！")
+
+        else:
+            print("Error!:最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。")
+            if language == "ja":
+                embed=discord.Embed(title="エラー!", description="最初に/setup_step1,/setup_step2コマンドでセットアップを行ってください。", color=0xff0000)
+            elif language == "en":
+                embed=discord.Embed(title="Error!", description="First, please use the /setup_step1, /setup_step2 command to set up the system.", color=0xff0000)
+            await interaction.response.send_message(embed=embed,ephemeral=False)
 
 client.run(os.environ['token'])
